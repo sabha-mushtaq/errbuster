@@ -138,3 +138,63 @@ examples/main.c:4:11: note: to match this '('
 ```
 
 ---
+## Error
+
+**Type:** CError
+**Message:** expected ';' at end of declaration
+**File:** examples/main.cpp
+**Line:** 6
+**Column:** 20
+
+### Stack
+
+```text
+examples/main.cpp:6:20: error: expected ';' at end of declaration
+    6 |     int number = 10
+      |                    ^
+      |                    ;
+1 error generated.
+
+```
+
+---
+## Error
+
+**Type:** CppError
+**Message:** expected ';' at end of declaration
+**File:** examples/main.cpp
+**Line:** 6
+**Column:** 20
+
+### Stack
+
+```text
+examples/main.cpp:6:20: error: expected ';' at end of declaration
+    6 |     int number = 10
+      |                    ^
+      |                    ;
+1 error generated.
+
+```
+
+---
+## Error
+
+**Type:** CppError
+**Message:** expected ';' at end of declaration
+**File:** examples/main.cpp
+**Line:** 6
+**Column:** 20
+
+### Stack
+
+```text
+examples/main.cpp:6:20: error: expected ';' at end of declaration
+    6 |     int number = 10
+      |                    ^
+      |                    ;
+1 error generated.
+
+```
+
+---

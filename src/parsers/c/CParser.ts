@@ -4,26 +4,22 @@ import type { Parser } from "../../core/Parser.js";
 export class CParser implements Parser {
   canParse(output: string): boolean {
     return (
-      /\bsegmentation fault\b/i.test(output) ||
-      /\bfatal error:/i.test(output) ||
-      /\berror:.*\b/i.test(output) ||
-      /\bwarning:.*\b/i.test(output)
+      /\.c:\d+:\d+:\s*(?:fatal error|error|warning):/i.test(output) ||
+      /\bsegmentation fault\b/i.test(output)
     );
   }
 
   parse(output: string): ErrorRecord | null {
-    const lines = output.trim().split("\n");
-
-    if (lines.length === 0 || !output.trim()) {
+    if (!output.trim()) {
       return null;
     }
 
-    // GCC / Clang format:
+    // GCC / Clang C compiler format:
     //
-    // main.c:10:5: error: ...
+    // main.c:10:5: error: expected ';'
     //
     const locationMatch = output.match(
-      /(?:^|\n)([^:\n]+):(\d+):(\d+):\s*(?:fatal error|error):\s*(.+)/i
+      /(?:^|\n)([^:\n]+\.c):(\d+):(\d+):\s*(?:fatal error|error|warning):\s*(.+)/i
     );
 
     if (locationMatch) {

@@ -2,6 +2,7 @@ import { runProcess } from "../core/ProcessRunner.js";
 import { NodeParser } from "../parsers/node/NodeParser.js";
 import { JavaParser } from "../parsers/java/JavaParser.js";
 import { PythonParser } from "../parsers/python/PythonParser.js";
+import { CppParser } from "../parsers/cpp/CppParser.js";
 import { CParser } from "../parsers/c/CParser.js";
 import { ParserRegistry } from "../parsers/ParserRegistry.js";
 import { TerminalRenderer } from "../renderer/TerminalRenderer.js";
@@ -49,7 +50,9 @@ export async function run(
     new NodeParser(),
     new JavaParser(),
     new PythonParser(),
+    new CppParser(),
     new CParser(),
+      
   ]);
 
   const parser = parserRegistry.findParser(output);

@@ -34,7 +34,12 @@ describe("CParser", () => {
 
     expect(parser.canParse(output)).toBe(true);
   });
+test("does not recognize C++ compiler output", () => {
+  const output =
+    "main.cpp:10:5: error: expected ';' at end of declaration";
 
+  expect(parser.canParse(output)).toBe(false);
+});
   test("parses a segmentation fault", () => {
     const output = "Segmentation fault";
 
