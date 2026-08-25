@@ -4,6 +4,7 @@ export interface ProcessResult {
   stdout: string;
   stderr: string;
   exitCode: number | null;
+  signal: NodeJS.Signals | null;
 }
 
 export function runProcess(
@@ -41,11 +42,12 @@ export function runProcess(
       reject(error);
     });
 
-    child.on("close", (exitCode) => {
+    child.on("close", (exitCode, signal) => {
       resolve({
         stdout,
         stderr,
         exitCode,
+        signal,
       });
     });
   });
