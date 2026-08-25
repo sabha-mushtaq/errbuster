@@ -1,6 +1,7 @@
 import type { ErrorRecord } from "../../core/ErrorRecord.js";
+import type { Parser } from "../../core/Parser.js";
 
-export class NodeParser {
+export class NodeParser implements Parser {
   parse(output: string): ErrorRecord | null {
     const lines = output.trim().split("\n");
 

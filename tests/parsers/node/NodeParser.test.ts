@@ -1,8 +1,9 @@
 import { describe, expect, test } from "vitest";
 import { NodeParser } from "../../../src/parsers/node/NodeParser";
+import type { Parser } from "../../../src/core/Parser";
 
 describe("NodeParser", () => {
-  const parser = new NodeParser();
+  const parser: Parser = new NodeParser();
 
   test("parses a Node.js error with file location", () => {
     const output = `TypeError: Cannot read properties of undefined
@@ -45,5 +46,17 @@ describe("NodeParser", () => {
     const result = parser.parse("");
 
     expect(result).toBeNull();
+  });
+
+  test("implements the Parser contract", () => {
+    const genericParser: Parser = new NodeParser();
+
+    const result = genericParser.parse(
+      "ReferenceError: something is not defined"
+    );
+
+    expect(result).not.toBeNull();
+    expect(result?.type).toBe("ReferenceError");
+    expect(result?.message).toBe("something is not defined");
   });
 });
