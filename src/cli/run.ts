@@ -1,6 +1,7 @@
 import { runProcess } from "../core/ProcessRunner.js";
-import { ErrorDetector } from "../core/ErrorDetector.js";
 import { NodeParser } from "../parsers/node/NodeParser.js";
+import { JavaParser } from "../parsers/java/JavaParser.js";
+import { ParserRegistry } from "../parsers/ParserRegistry.js";
 import { TerminalRenderer } from "../renderer/TerminalRenderer.js";
 import { ErrLogStore } from "../storage/ErrLogStore.js";
 import { askToSave } from "./prompt.js";
@@ -11,17 +12,20 @@ export async function run(
 ): Promise<void> {
   const processResult = await runProcess(command, args);
 
-  const detector = new ErrorDetector();
-
   const output = processResult.stderr || processResult.stdout;
 
-  const isError = detector.detect(output);
+  // Let the parser registry determine whether the
+  // output contains an error and which parser understands it.
+  const parserRegistry = new ParserRegistry([
+    new NodeParser(),
+    new JavaParser(),
+  ]);
 
-  if (!isError) {
+  const parser = parserRegistry.findParser(output);
+
+  if (!parser) {
     return;
   }
-
-  const parser = new NodeParser();
 
   const error = parser.parse(output);
 

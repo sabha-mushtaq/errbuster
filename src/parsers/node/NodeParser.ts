@@ -2,6 +2,11 @@ import type { ErrorRecord } from "../../core/ErrorRecord.js";
 import type { Parser } from "../../core/Parser.js";
 
 export class NodeParser implements Parser {
+     canParse(output: string): boolean {
+    return /\b(TypeError|ReferenceError|SyntaxError|RangeError|URIError|EvalError|Error):/.test(
+      output
+    );
+  }
   parse(output: string): ErrorRecord | null {
     const lines = output.trim().split("\n");
 
