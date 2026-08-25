@@ -16,13 +16,21 @@ describe("TerminalRenderer", () => {
 
     const result = renderer.render(error);
 
-    expect(result).toContain("ERROR: TypeError");
+    expect(result).toContain("ERRBUSTER • ERROR");
+
+    expect(result).toContain("Type");
+    expect(result).toContain("TypeError");
+
+    expect(result).toContain("Message");
     expect(result).toContain(
-      "Message: Cannot read properties of undefined"
+      "Cannot read properties of undefined"
     );
-    expect(result).toContain("File: /app/index.js");
-    expect(result).toContain("Line: 10");
-    expect(result).toContain("Column: 5");
+
+    expect(result).toContain("File");
+    expect(result).toContain("/app/index.js");
+
+    expect(result).toContain("Location");
+    expect(result).toContain("10:5");
   });
 
   test("renders the stack trace when it is available", () => {
@@ -35,8 +43,12 @@ describe("TerminalRenderer", () => {
 
     const result = renderer.render(error);
 
-    expect(result).toContain("Stack:");
-    expect(result).toContain("TypeError: Something went wrong");
+    expect(result).toContain("Stack Trace");
+
+    expect(result).toContain(
+      "TypeError: Something went wrong"
+    );
+
     expect(result).toContain(
       "at calculate (/app/index.js:10:5)"
     );
@@ -50,12 +62,18 @@ describe("TerminalRenderer", () => {
 
     const result = renderer.render(error);
 
-    expect(result).toContain("ERROR: Error");
-    expect(result).toContain("Message: Something went wrong");
+    expect(result).toContain("ERRBUSTER • ERROR");
 
-    expect(result).not.toContain("File:");
-    expect(result).not.toContain("Line:");
-    expect(result).not.toContain("Column:");
-    expect(result).not.toContain("Stack:");
+    expect(result).toContain("Type");
+    expect(result).toContain("Error");
+
+    expect(result).toContain("Message");
+    expect(result).toContain(
+      "Something went wrong"
+    );
+
+    expect(result).not.toContain("File");
+    expect(result).not.toContain("Location");
+    expect(result).not.toContain("Stack Trace");
   });
 });

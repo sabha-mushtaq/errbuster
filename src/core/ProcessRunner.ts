@@ -18,22 +18,23 @@ export function runProcess(
     let stdout = "";
     let stderr = "";
 
+    // Normal application output:
+    // capture it AND immediately show it to the developer.
     child.stdout.on("data", (data: Buffer) => {
       const output = data.toString();
 
       stdout += output;
 
-      // Pass normal application output to the user's terminal
       process.stdout.write(output);
     });
 
+    // Error/diagnostic output:
+    // capture it, but don't immediately print it.
+    // ErrBuster will decide how to present it.
     child.stderr.on("data", (data: Buffer) => {
       const output = data.toString();
 
       stderr += output;
-
-      // Pass error/diagnostic output to the user's terminal
-      process.stderr.write(output);
     });
 
     child.on("error", (error) => {

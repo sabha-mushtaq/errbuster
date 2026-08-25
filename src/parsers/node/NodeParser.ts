@@ -9,9 +9,17 @@ export class NodeParser implements Parser {
       return null;
     }
 
-    const errorLine = lines[0];
+    const errorLine = lines.find((line) =>
+      /^(\w*Error):\s*(.+)$/.test(line.trim())
+    );
 
-    const errorMatch = errorLine.match(/^(\w*Error):\s*(.+)$/);
+    if (!errorLine) {
+      return null;
+    }
+
+    const errorMatch = errorLine.trim().match(
+      /^(\w*Error):\s*(.+)$/
+    );
 
     if (!errorMatch) {
       return null;
@@ -24,19 +32,14 @@ export class NodeParser implements Parser {
       return null;
     }
 
-    const stackLine = lines.find((line) =>
-      line.trim().startsWith("at ")
-    );
-
-    if (!stackLine) {
-      return {
-        type,
-        message,
-      };
-    }
-
-    const locationMatch = stackLine.match(
-      /\((.*):(\d+):(\d+)\)/
+    // Look for a stack-trace location.
+    //
+    // Supports:
+    // at calculate (/app/index.js:10:5)
+    // at file:///app/index.js:10:5
+    // atfile:///app/index.js:10:5
+    const locationMatch = output.match(
+      /(?:at\s*)?(?:\()?((?:file:\/\/\/|\/)[^)\n]+):(\d+):(\d+)\)?/
     );
 
     if (!locationMatch) {

@@ -59,4 +59,21 @@ describe("NodeParser", () => {
     expect(result?.type).toBe("ReferenceError");
     expect(result?.message).toBe("something is not defined");
   });
+  test("parses Node.js ESM stack trace with file URL", () => {
+  const output = `TypeError: Cannot read properties of undefined (reading 'name')
+    atfile:///app/crash.js:5:18
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)`;
+
+  const result = parser.parse(output);
+
+  expect(result).not.toBeNull();
+
+  expect(result?.type).toBe("TypeError");
+  expect(result?.message).toBe(
+    "Cannot read properties of undefined (reading 'name')"
+  );
+  expect(result?.file).toBe("file:///app/crash.js");
+  expect(result?.line).toBe(5);
+  expect(result?.column).toBe(18);
+});
 });
