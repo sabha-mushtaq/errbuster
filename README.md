@@ -1,6 +1,6 @@
-**# ErrBuster**
+# ErrBuster
 
-\> A multi-language CLI for parsing and presenting application, runtime, compiler, and process errors in a developer-friendly format.
+> A multi-language CLI for parsing and presenting application, runtime, compiler, and process errors in a developer-friendly format.
 
 ErrBuster runs a command, captures its output, recognizes supported error formats, extracts useful information, and presents the result in a structured terminal interface.
 
@@ -8,955 +8,641 @@ When ErrBuster does not recognize an error, it preserves the original terminal o
 
 ---
 
-**## ✨ What is ErrBuster?**
+## ✨ What is ErrBuster?
 
 Different programming languages and tools produce errors in very different formats.
 
 For example, Node.js may produce:
 
-\`\`\`text
-
+```text
 TypeError: Cannot read properties of undefined (reading 'name')
-
     at file:///app/crash.js:5:18
-
-\`\`\`
+```
 
 A Java application may produce:
 
-\`\`\`text
-
+```text
 Exception in thread "main" java.lang.NullPointerException
-
     at Main.main(Main.java:7)
-
-\`\`\`
+```
 
 A C++ compiler may produce:
 
-\`\`\`text
-
+```text
 main.cpp:6:20: error: expected ';' at end of declaration
-
-\`\`\`
+```
 
 And a native process may terminate with:
 
-\`\`\`text
-
+```text
 SIGSEGV
-
-\`\`\`
+```
 
 ErrBuster provides a common CLI experience for these different error formats.
 
 ---
 
-**## Supported Languages**
+## Supported Languages
 
 ErrBuster currently supports:
 
-\- **\*\*Node.js\*\***
-
-\- **\*\*Java\*\***
-
-\- **\*\*Python\*\***
-
-\- **\*\*C\*\***
-
-\- **\*\*C++\*\***
+- **Node.js**
+- **Java**
+- **Python**
+- **C**
+- **C++**
 
 The parser architecture is designed so that language-specific logic stays isolated from the core execution pipeline.
 
-This means the project is **\*\*multi-language today\*\*** and **\*\*extensible by design\*\***, rather than claiming to support every programming language.
+This means the project is **multi-language today** and **extensible by design**, rather than claiming to support every programming language.
 
 ---
 
-**## 🚀 How It Works**
+## 🚀 How It Works
 
 At a high level:
 
-\`\`\`mermaid
-
+```mermaid
 flowchart TD
-
     A["Developer command"] --> B["ErrBuster CLI"]
-
     B --> C["ProcessRunner"]
-
     C --> D["Application / Compiler / Runtime"]
-
     D --> E["stdout / stderr / process signal"]
-
     E --> F["ParserRegistry"]
 
     F --> G{"Matching parser?"}
 
     G -->|Yes| H["Language Parser"]
-
     H --> I["ErrorRecord"]
-
     I --> J["TerminalRenderer"]
-
     J --> K["Structured error"]
 
     G -->|No| L["Original terminal output"]
-
-\`\`\`
+```
 
 The important design principle is:
 
-\> **\*\*ErrBuster improves errors it understands and preserves errors it does not.\*\***
+> **ErrBuster improves errors it understands and preserves errors it does not.**
 
 ---
 
-**# 🛡️ Fail-Open Design**
-
-One of the core design goals of ErrBuster is **\*\*fail-open behavior\*\***.
-
-ErrBuster is a development aid. It should not become another failure point that prevents the developer's command from running or hides the application's real output.
-
-**### If ErrBuster does not understand an error**
-
-It does not replace it with:
-
-\`\`\`text
-
-Unknown Error
-
-
-
-flowchart TD
-
-    A["Application / compiler output"] --> B["ParserRegistry"]
-
-    B --> C{"Recognized?"}
-
-    C -->|Yes| D["Parse and render"]
-
-    C -->|No| E["Preserve original output"]
-
-    D --> F["Developer"]
-
-    E --> F
-```
-
-The intended fail-open principle:
-
-```text
-If ErrBuster can improve the error:
-    improve it.
-
-If ErrBuster cannot understand the error:
-    leave it alone.
-
-If ErrBuster itself encounters a problem:
-    do not hide the original application output.
-```
-
-This principle is especially important for a CLI wrapper.
-
-\# 🏗️ Architecture
+# 🏗️ Architecture
 
 ErrBuster is organized around clear separation of responsibilities.
 
-\`\`\`mermaid
-
+```mermaid
 flowchart LR
-
-    CLI["CLI\<br/>src/cli"] --> PR["ProcessRunner\<br/>src/core"]
-
-    PR --> REG["ParserRegistry\<br/>src/parsers"]
+    CLI["CLI<br/>src/cli"] --> PR["ProcessRunner<br/>src/core"]
+    PR --> REG["ParserRegistry<br/>src/parsers"]
 
     REG --> NODE["NodeParser"]
-
     REG --> JAVA["JavaParser"]
-
     REG --> PY["PythonParser"]
-
     REG --> C["CParser"]
-
     REG --> CPP["CppParser"]
 
     NODE --> ER["ErrorRecord"]
-
     JAVA --> ER
-
     PY --> ER
-
     C --> ER
-
     CPP --> ER
 
     ER --> R["TerminalRenderer"]
-
     R --> S["ErrLogStore"]
+```
 
-\`\`\`
+### Core components
 
-**### Core components**
-
-**#### ProcessRunner**
+#### ProcessRunner
 
 Responsible for:
 
-\- Starting external processes
+- Starting external processes
+- Passing arguments to the process
+- Capturing `stdout`
+- Capturing `stderr`
+- Detecting process termination signals
+- Returning the process result to the CLI
 
-\- Passing arguments to the process
-
-\- Capturing \`stdout\`
-
-\- Capturing \`stderr\`
-
-\- Detecting process termination signals
-
-\- Returning the process result to the CLI
-
-**#### ParserRegistry**
+#### ParserRegistry
 
 Responsible for selecting the parser that understands the captured output.
 
-**#### Language Parsers**
+#### Language Parsers
 
 Each parser contains language/tool-specific parsing logic.
 
 Currently:
 
-\`\`\`text
-
+```text
 NodeParser
-
 JavaParser
-
 PythonParser
-
 CParser
-
 CppParser
+```
 
-\`\`\`
-
-**#### ErrorRecord**
+#### ErrorRecord
 
 Provides a common structure for parsed errors:
 
-\`\`\`typescript
-
+```typescript
 export interface ErrorRecord {
-
   type: string;
-
   message: string;
-
   stack?: string;
-
   file?: string;
-
   line?: number;
-
   column?: number;
-
 }
+```
 
-\`\`\`
+#### TerminalRenderer
 
-**#### TerminalRenderer**
+Turns a structured `ErrorRecord` into the formatted terminal output shown to the developer.
 
-Turns a structured \`ErrorRecord\` into the formatted terminal output shown to the developer.
-
-**#### ErrLogStore**
+#### ErrLogStore
 
 Persists a recognized error when the developer chooses to save it.
 
 ---
 
-**# 🔌 Parser Architecture**
+# 🔌 Parser Architecture
 
 Every language parser follows the same contract:
 
-\`\`\`typescript
-
+```typescript
 export interface Parser {
-
   canParse(output: string): boolean;
-
   parse(output: string): ErrorRecord | null;
-
 }
-
-\`\`\`
+```
 
 This keeps language-specific parsing separate from the rest of the application.
 
-\`\`\`mermaid
-
+```mermaid
 flowchart TD
-
     O["Raw process output"] --> R["ParserRegistry"]
 
-    R --> N{"NodeParser\<br/>can parse?"}
-
-    R --> J{"JavaParser\<br/>can parse?"}
-
-    R --> P{"PythonParser\<br/>can parse?"}
-
-    R --> C{"CParser\<br/>can parse?"}
-
-    R --> CP{"CppParser\<br/>can parse?"}
+    R --> N{"NodeParser<br/>can parse?"}
+    R --> J{"JavaParser<br/>can parse?"}
+    R --> P{"PythonParser<br/>can parse?"}
+    R --> C{"CParser<br/>can parse?"}
+    R --> CP{"CppParser<br/>can parse?"}
 
     N --> E["Selected Parser"]
-
     J --> E
-
     P --> E
-
     C --> E
-
     CP --> E
 
     E --> PARSE["parse(output)"]
-
     PARSE --> RECORD["ErrorRecord"]
-
-\`\`\`
+```
 
 Adding support for another language should primarily involve adding a parser and its tests rather than rewriting the process execution and rendering layers.
 
 ---
 
-**# 🛡️ Unknown Error Fallback**
+# 🛡️ Unknown Error Fallback
 
-ErrBuster deliberately does **\*\*not\*\*** display an artificial "Unknown Error" when a parser cannot recognize the output.
+ErrBuster deliberately does **not** display an artificial "Unknown Error" when a parser cannot recognize the output.
 
 For example, suppose an application produces:
 
-\`\`\`text
-
+```text
 Application started
-
-CUSTOM\_DIAGNOSTIC: Something unexpected happened
-
-\`\`\`
+CUSTOM_DIAGNOSTIC: Something unexpected happened
+```
 
 If no parser understands that diagnostic, ErrBuster leaves the original output alone.
 
-\`\`\`mermaid
-
+```mermaid
 flowchart TD
-
     A["Process output"] --> B["ParserRegistry"]
-
     B --> C{"Parser found?"}
 
     C -->|Yes| D["Parse into ErrorRecord"]
-
     D --> E["Render structured error"]
 
     C -->|No| F["Preserve original terminal output"]
-
     F --> G["Developer sees the actual error"]
-
-\`\`\`
+```
 
 This is an important safety principle for a developer tool:
 
-\> **\*\*ErrBuster should never hide information simply because it cannot understand it.\*\***
+> **ErrBuster should never hide information simply because it cannot understand it.**
 
 ---
 
-**# ⚡ Process Signal Handling**
+# ⚡ Process Signal Handling
 
 ErrBuster also handles process-level termination signals.
 
 Currently handled signals include:
 
-\| Signal | Human-readable result |
-
-\|---|---|
-
-\| \`SIGSEGV\` | Segmentation Fault |
-
-\| \`SIGABRT\` | Aborted |
-
-\| \`SIGTERM\` | Process Terminated |
-
-\| \`SIGKILL\` | Process Killed |
-
-\| \`SIGINT\` | Interrupted |
+| Signal | Human-readable result |
+|---|---|
+| `SIGSEGV` | Segmentation Fault |
+| `SIGABRT` | Aborted |
+| `SIGTERM` | Process Terminated |
+| `SIGKILL` | Process Killed |
+| `SIGINT` | Interrupted |
 
 For example:
 
-\`\`\`text
-
+```text
 ERRBUSTER • ERROR
 
 Type       Segmentation Fault
 
 Message    The program tried to access invalid memory.
-
            This can be caused by a null pointer,
-
            invalid pointer, or out-of-bounds memory access.
-
-\`\`\`
+```
 
 The signal is handled separately from language-specific parsers because an operating-system process signal is not a language-level exception.
 
-\`\`\`mermaid
-
+```mermaid
 flowchart TD
-
     A["ProcessRunner"] --> B{"Process ended normally?"}
 
     B -->|Yes| C["Process output"]
-
     B -->|No - signal| D["Signal information"]
 
     D --> E["Human-readable signal error"]
-
     E --> F["TerminalRenderer"]
 
     C --> G["ParserRegistry"]
-
-\`\`\`
+```
 
 ---
 
-**# 💻 Usage**
+# 💻 Usage
 
 ErrBuster is designed to run commands through a single interface:
 
-\`\`\`bash
+```bash
+errbuster <command> [arguments...]
+```
 
-errbuster \<command> [arguments...]
+### Node.js
 
-\`\`\`
-
-**### Node.js**
-
-\`\`\`bash
-
+```bash
 errbuster node app.js
+```
 
-\`\`\`
+### Python
 
-**### Python**
-
-\`\`\`bash
-
+```bash
 errbuster python3 app.py
+```
 
-\`\`\`
+### Java
 
-**### Java**
-
-\`\`\`bash
-
+```bash
 errbuster java -jar app.jar
+```
 
-\`\`\`
+### Spring Boot
 
-**### Spring Boot**
+```bash
+errbuster ./mvnw spring-boot:run
+```
 
-\`\`\`bash
-
-errbuster ./mvnw spring-boot\:run
-
-\`\`\`
-
-**### C / C++**
+### C / C++
 
 For a compiled program:
 
-\`\`\`bash
-
+```bash
 errbuster ./examples/main
-
-\`\`\`
+```
 
 For compiler diagnostics:
 
-\`\`\`bash
-
+```bash
 errbuster gcc examples/main.c -o examples/main
+```
 
-\`\`\`
-
-\`\`\`bash
-
+```bash
 errbuster g++ examples/main.cpp -o examples/main
-
-\`\`\`
+```
 
 The command and its arguments are passed through to the underlying process.
 
 ---
 
-**# 🧪 Examples**
+# 🧪 Examples
 
-**## Node.js**
+## Node.js
 
-\`\`\`bash
-
+```bash
 errbuster node examples/crash.js
-
-\`\`\`
+```
 
 ErrBuster can extract:
 
-\`\`\`text
-
+```text
 Type
-
 Message
-
 File
-
 Line
-
 Column
-
 Stack Trace
-
-\`\`\`
+```
 
 Example:
 
-\`\`\`text
-
+```text
 Type       │ TypeError
-
 Message    │ Cannot read properties of undefined (reading 'name')
-
 File       │ file:///app/crash.js
-
 Location   │ 5:18
-
-\`\`\`
+```
 
 ---
 
-**## Java**
+## Java
 
 A Java runtime exception can be converted into a structured representation:
 
-\`\`\`text
-
+```text
 Type       │ java.lang.NullPointerException
-
-Message    │ Cannot invoke "String.length()" because "\<local1>" is null
-
+Message    │ Cannot invoke "String.length()" because "<local1>" is null
 File       │ Main.java
-
 Location   │ 7
-
-\`\`\`
+```
 
 ---
 
-**## Python**
+## Python
 
 Python traceback information can be parsed into:
 
-\`\`\`text
-
+```text
 Type
-
 Message
-
 File
-
 Line
-
 Stack Trace
-
-\`\`\`
+```
 
 For example:
 
-\`\`\`text
-
+```text
 Type       │ AttributeError
-
 Message    │ 'NoneType' object has no attribute 'name'
-
-\`\`\`
+```
 
 ---
 
-**## C**
+## C
 
 Compiler diagnostics such as:
 
-\`\`\`text
-
+```text
 examples/main.c:5:5: error: expected ')'
-
-\`\`\`
+```
 
 can be rendered as:
 
-\`\`\`text
-
+```text
 Type       │ CError
-
 Message    │ expected ')'
-
 File       │ examples/main.c
-
 Location   │ 5:5
-
-\`\`\`
+```
 
 ---
 
-**## C++**
+## C++
 
 Compiler diagnostics such as:
 
-\`\`\`text
-
+```text
 examples/main.cpp:6:20: error: expected ';' at end of declaration
-
-\`\`\`
+```
 
 can be rendered as:
 
-\`\`\`text
-
+```text
 Type       │ CppError
-
 Message    │ expected ';' at end of declaration
-
 File       │ examples/main.cpp
-
 Location   │ 6:20
-
-\`\`\`
+```
 
 C and C++ have separate parsers so that their diagnostic formats can evolve independently.
 
 ---
 
-**# 💾 Error Logging**
+# 💾 Error Logging
 
 After ErrBuster successfully parses an error, it can optionally store the structured error:
 
-\`\`\`text
-
+```text
 Save this error to errlog.md? (y/n):
-
-\`\`\`
+```
 
 The developer decides whether the error should be stored.
 
 The storage layer is intentionally separate from parsing and rendering.
 
-\`\`\`mermaid
-
+```mermaid
 flowchart LR
-
     A["Parsed ErrorRecord"] --> B["TerminalRenderer"]
-
     B --> C["Developer"]
-
     C --> D{"Save error?"}
-
     D -->|Yes| E["ErrLogStore"]
-
     D -->|No| F["Done"]
-
     E --> G["errlog.md"]
-
-\`\`\`
+```
 
 ---
 
-**# 📁 Project Structure**
+# 📁 Project Structure
 
-\`\`\`text
-
+```text
 errbuster/
-
 │
-
 ├── src/
-
 │   │
-
 │   ├── cli/
-
 │   │   ├── index.ts
-
 │   │   ├── run.ts
-
 │   │   └── prompt.ts
-
 │   │
-
 │   ├── core/
-
 │   │   ├── ErrorRecord.ts
-
 │   │   ├── Parser.ts
-
 │   │   └── ProcessRunner.ts
-
 │   │
-
 │   ├── parsers/
-
 │   │   ├── ParserRegistry.ts
-
 │   │   │
-
 │   │   ├── node/
-
 │   │   │   └── NodeParser.ts
-
 │   │   │
-
 │   │   ├── java/
-
 │   │   │   └── JavaParser.ts
-
 │   │   │
-
 │   │   ├── python/
-
 │   │   │   └── PythonParser.ts
-
 │   │   │
-
 │   │   ├── c/
-
 │   │   │   └── CParser.ts
-
 │   │   │
-
 │   │   └── cpp/
-
 │   │       └── CppParser.ts
-
 │   │
-
 │   ├── renderer/
-
 │   │   └── TerminalRenderer.ts
-
 │   │
-
 │   └── storage/
-
 │       └── ErrLogStore.ts
-
 │
-
 ├── tests/
-
 │   ├── core/
-
 │   ├── parsers/
-
 │   │   ├── node/
-
 │   │   ├── java/
-
 │   │   ├── python/
-
 │   │   ├── c/
-
 │   │   └── cpp/
-
 │   ├── renderer/
-
 │   └── storage/
-
 │
-
 ├── examples/
-
 │
-
 ├── package.json
-
 ├── tsconfig.json
-
 └── README.md
-
-\`\`\`
+```
 
 ---
 
-**# 🧱 Design Principles**
+# 🧱 Design Principles
 
-**### Separation of concerns**
+### Separation of concerns
 
 Each part of the system has a focused responsibility:
 
-\`\`\`mermaid
-
+```mermaid
 flowchart LR
-
     A["Process execution"] --> B["Parsing"]
-
     B --> C["Structured ErrorRecord"]
-
     C --> D["Rendering"]
-
     C --> E["Storage"]
-
-\`\`\`
+```
 
 This prevents language-specific parsing code from spreading throughout the application.
 
-**### Extensible parser design**
+### Extensible parser design
 
 The core pipeline does not need to know the details of every supported language.
 
-\`\`\`text
-
+```text
 ProcessRunner
-
       ↓
-
 ParserRegistry
-
       ↓
-
 Language-specific Parser
-
       ↓
-
 ErrorRecord
-
       ↓
-
 Renderer / Storage
+```
 
-\`\`\`
-
-**### Safe fallback**
+### Safe fallback
 
 Unsupported output is preserved rather than transformed into potentially misleading information.
 
 ---
 
-**# 🧪 Testing**
+# 🧪 Testing
 
-ErrBuster uses [Vitest]\(https\://vitest.dev/) for automated testing.
+ErrBuster uses [Vitest](https://vitest.dev/) for automated testing.
 
 Run the complete test suite:
 
-\`\`\`bash
-
+```bash
 npx vitest run
-
-\`\`\`
+```
 
 Tests currently cover:
 
-\- \`ErrorRecord\`
-
-\- \`ProcessRunner\`
-
-\- Node.js parsing
-
-\- Java parsing
-
-\- Python parsing
-
-\- C parsing
-
-\- C++ parsing
-
-\- Terminal rendering
-
-\- Error storage
+- `ErrorRecord`
+- `ProcessRunner`
+- Node.js parsing
+- Java parsing
+- Python parsing
+- C parsing
+- C++ parsing
+- Terminal rendering
+- Error storage
 
 The parser tests verify both successful parsing and rejection of output that does not belong to that parser.
 
 ---
 
-**# 🔧 Development**
+# 🔧 Development
 
 Clone the repository:
 
-\`\`\`bash
-
-git clone \<repository-url>
-
+```bash
+git clone <repository-url>
 cd errbuster
-
-\`\`\`
+```
 
 Install dependencies:
 
-\`\`\`bash
-
+```bash
 npm install
-
-\`\`\`
+```
 
 Run ErrBuster in development mode:
 
-\`\`\`bash
-
+```bash
 npm run dev -- node examples/crash.js
-
-\`\`\`
+```
 
 Run the test suite:
 
-\`\`\`bash
-
+```bash
 npx vitest run
-
-\`\`\`
+```
 
 Type-check the project:
 
-\`\`\`bash
-
+```bash
 npx tsc --noEmit
-
-\`\`\`
+```
 
 ---
 
-**# 📌 Current Status**
+# 📌 Current Status
 
 ErrBuster currently provides:
 
-\`\`\`text
-
+```text
 Node.js error parsing       ✅
-
 Java error parsing          ✅
-
 Python error parsing        ✅
-
 C compiler error parsing   ✅
-
 C++ compiler error parsing ✅
 
 Process signal handling     ✅
-
 Unknown-error fallback      ✅
-
 Terminal rendering          ✅
-
 Error persistence           ✅
-
 Automated tests             ✅
-
-\`\`\`
+```
 
 The project is currently focused on building a reliable foundation for multi-language error diagnostics.
 
 ---
 
-**# ⚠️ Limitations**
+# ⚠️ Limitations
 
 ErrBuster currently supports a defined set of languages and diagnostic formats.
 
@@ -970,84 +656,68 @@ ErrBuster also works by launching the command itself. Globally installing the CL
 
 Use:
 
-\`\`\`bash
-
-errbuster \<command>
-
-\`\`\`
+```bash
+errbuster <command>
+```
 
 to execute a process through ErrBuster.
 
 ---
 
-**# 🤝 Contributing**
+# 🤝 Contributing
 
 Contributions are welcome.
 
 If you want to add support for another language or diagnostic format, the preferred approach is to add:
 
-\`\`\`text
+```text
+src/parsers/<language>/<Language>Parser.ts
+tests/parsers/<language>/<Language>Parser.test.ts
+```
 
-src/parsers/\<language>/\<Language>Parser.ts
-
-tests/parsers/\<language>/\<Language>Parser.test.ts
-
-\`\`\`
-
-The new parser should implement the existing \`Parser\` interface and avoid introducing language-specific logic into the core execution pipeline.
+The new parser should implement the existing `Parser` interface and avoid introducing language-specific logic into the core execution pipeline.
 
 ---
 
-**# 🗺️ Future Direction**
+# 🗺️ Future Direction
 
 The current focus is reliability and a clean developer experience.
 
 Potential future improvements may include:
 
-\- More diagnostic formats
-
-\- More languages
-
-\- Improved compiler diagnostics
-
-\- Better source-location handling
-
-\- Improved terminal rendering
-
-\- More sophisticated error grouping
-
-\- Configuration support
-
-\- More useful debugging context
+- More diagnostic formats
+- More languages
+- Improved compiler diagnostics
+- Better source-location handling
+- Improved terminal rendering
+- More sophisticated error grouping
+- Configuration support
+- More useful debugging context
 
 These are future possibilities rather than promises about the current release.
 
 ---
 
-**# 📄 License**
+# 📄 License
 
 This project is licensed under the MIT License.
 
-See the \`LICENSE\` file for details.
+See the `LICENSE` file for details.
 
 ---
 
-**# 🎯 Vision**
+# 🎯 Vision
 
 ErrBuster is built around a simple idea:
 
-\> **\*\*Make terminal errors easier to understand without getting in the developer's way.\*\***
+> **Make terminal errors easier to understand without getting in the developer's way.**
 
 The project aims to provide a consistent developer experience across different languages and tools while keeping language-specific complexity isolated inside individual parsers.
 
 The core principle is:
 
-\`\`\`text
-
+```text
 Understand what you can.
-
 Preserve what you cannot.
-
 Never hide the original error.
-
-\`\`\`
+```
