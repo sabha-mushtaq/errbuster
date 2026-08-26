@@ -15,16 +15,19 @@ export async function run(
 ): Promise<void> {
   const processResult = await runProcess(command, args);
 
-  const output = processResult.stderr || processResult.stdout;
+  const output =
+    processResult.stderr || processResult.stdout;
 
-  // Handle processes terminated by an operating-system signal.
+  // --------------------------------------------------
+  // Handle process-level failures
+  // --------------------------------------------------
+
   if (processResult.signal) {
     const signalInfo = getSignalInfo(processResult.signal);
 
     const error = {
       type: signalInfo.type,
       message: signalInfo.message,
-      ...(output ? { stack: output } : {}),
     };
 
     const renderer = new TerminalRenderer();
@@ -44,32 +47,69 @@ export async function run(
     return;
   }
 
-  // Let the parser registry determine which parser
-  // understands the terminal output.
+  // --------------------------------------------------
+  // Register available language parsers
+  // --------------------------------------------------
+
   const parserRegistry = new ParserRegistry([
     new NodeParser(),
     new JavaParser(),
     new PythonParser(),
     new CppParser(),
     new CParser(),
-      
   ]);
+
+  // --------------------------------------------------
+  // Find a parser that understands the output
+  // --------------------------------------------------
 
   const parser = parserRegistry.findParser(output);
 
+  // --------------------------------------------------
+  // Fallback:
+  // If no parser understands the error, preserve
+  // the original terminal stderr exactly as it was.
+  // --------------------------------------------------
+
   if (!parser) {
+    if (processResult.stderr) {
+      process.stderr.write(processResult.stderr);
+    }
+
     return;
   }
+
+  // --------------------------------------------------
+  // Parse the error
+  // --------------------------------------------------
 
   const error = parser.parse(output);
 
+  // --------------------------------------------------
+  // Fallback:
+  // Parser recognized the output but failed to parse it.
+  // Preserve the original terminal stderr.
+  // --------------------------------------------------
+
   if (!error) {
+    if (processResult.stderr) {
+      process.stderr.write(processResult.stderr);
+    }
+
     return;
   }
+
+  // --------------------------------------------------
+  // Render the structured error
+  // --------------------------------------------------
 
   const renderer = new TerminalRenderer();
 
   console.log(renderer.render(error));
+
+  // --------------------------------------------------
+  // Ask the user for permission before storing
+  // --------------------------------------------------
 
   const shouldStore = await askToSave();
 
@@ -81,6 +121,11 @@ export async function run(
 
   await store.store(error);
 }
+
+// --------------------------------------------------
+// Translate operating-system signals into
+// human-readable errors.
+// --------------------------------------------------
 
 function getSignalInfo(signal: NodeJS.Signals): {
   type: string;

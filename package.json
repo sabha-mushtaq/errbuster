@@ -1,10 +1,24 @@
 {
   "name": "errbuster",
-  "version": "1.0.0",
-   "description": "A language-independent CLI for capturing, detecting, and presenting application errors in a clean, readable format.",
+  "version": "0.1.0",
+  "description": "A multi-language CLI for parsing and presenting runtime, compiler, and process errors in a clean, readable format.",
   "type": "module",
   "author": "Sabha Mushtaq",
   "license": "MIT",
+
+  "files": [
+    "dist"
+  ],
+
+  "bin": {
+    
+    "errbuster": "./dist/cli/index.js"
+  },
+
+  "engines": {
+    "node": ">=20"
+  },
+
   "scripts": {
     "dev": "tsx src/cli/index.ts",
     "build": "tsc",
@@ -12,13 +26,11 @@
     "test": "vitest",
     "test:run": "vitest run"
   },
+
   "devDependencies": {
     "@types/node": "^26.3.0",
     "tsx": "^4.23.12",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
-  },
-  "bin": {
-  "errbuster": "./dist/cli/index.js"
-}
+  }
 }

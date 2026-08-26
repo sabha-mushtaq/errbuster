@@ -14,6 +14,8 @@ dist/
 # OS files
 .DS_Store
 
+*.tgz
+
 # IDE/editor files
 .vscode/
 .idea/
@@ -23,3 +25,5 @@ coverage/
 
 # Temporary files
 *.tmp
+# ErrBuster generated output
+errlog.md

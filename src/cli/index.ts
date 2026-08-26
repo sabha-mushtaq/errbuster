@@ -1,5 +1,5 @@
+#!/usr/bin/env node
 import { run } from "./run.js";
-
 const args = process.argv.slice(2);
 
 if (args.length === 0) {
